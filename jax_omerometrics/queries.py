@@ -60,3 +60,25 @@ def all_originalfiles(conn):
         conn.SERVICE_OPTS
         )
     return [x[0].val for x in results]
+
+
+def sessions_per_day(conn, date):
+    """Return a list of tuples with users who started sessions on a 
+        certain date and the number of sessions per user
+
+        Note: date should be a string formatted YYYY-MM-DD
+
+    """
+    q = conn.getQueryService()
+    params = Parameters()
+    query = "SELECT s.owner.omeName, count(s)" + \
+            " FROM Session s" + \
+            " WHERE s.started > cast('" + date + " 00:00', timestamp)" + \
+            " AND s.started < cast('" + date + " 23:59', timestamp)" + \
+            " GROUP by s.owner.omeName"
+    results = q.projection(
+        query,
+        params,
+        conn.SERVICE_OPTS
+        )
+    return [(x[0].val, x[1].val) for x in results]
