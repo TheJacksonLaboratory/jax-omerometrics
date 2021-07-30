@@ -7,7 +7,7 @@ from pandas import DataFrame
 from pathlib import Path
 
 def collect_data(user, pwd):
-    conn = ezomero.connect(user, pwd, host='bhomero01lp.jax.org', port=4064, secure=True)
+    conn = ezomero.connect(user, pwd, group='', host='bhomero01lp.jax.org', port=4064, secure=True)
     yesterday = datetime.datetime.now() - datetime.timedelta(1)   
     timestamp = yesterday.strftime("%Y-%m-%d") 
     allsessions = queries.sessions_per_day(conn, timestamp)
@@ -17,7 +17,6 @@ def collect_data(user, pwd):
     sessions_list = [timestamp, total_sessions, total_users]
     sessions_headers = ['timestamp', 'sessions', 'users']
     sessions = DataFrame([sessions_list], columns=sessions_headers)
-    print(sessions)
     return sessions
 
 def write_csvs(sessions, folder):
