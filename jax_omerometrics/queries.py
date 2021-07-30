@@ -1,12 +1,11 @@
+"""List HQL queries for retrieving different data."""
 from datetime import datetime
 from omero.sys import Parameters
 from omero.rtypes import rlong
 
 
 def user_creation_time(conn, user_id):
-    """Return creation date of Experimenter
-
-    """
+    """Return creation date of Experimenter."""
     q = conn.getQueryService()
     params = Parameters()
     params.map = {"userid": rlong(user_id)}
@@ -24,7 +23,7 @@ def user_creation_time(conn, user_id):
 
 
 def originalfile_size_date(conn, originalfile_id):
-    """Return size of OriginalFile in bytes, with date stamp
+    """Return size of OriginalFile in bytes, with date stamp.
 
     Note: OriginalFile doesn't necessarily have an associated size.
           Needs to be part of an image fileset
@@ -41,13 +40,12 @@ def originalfile_size_date(conn, originalfile_id):
         params,
         conn.SERVICE_OPTS
         )
-    return [(x[0].val, datetime.fromtimestamp(x[1].val / 1000)) for x in results]
+    return [(x[0].val,
+            datetime.fromtimestamp(x[1].val / 1000)) for x in results]
 
 
 def all_originalfiles(conn):
-    """Return a list of all OriginalFile ids associated with Images
-
-    """
+    """Return a list of all OriginalFile ids associated with Images."""
     q = conn.getQueryService()
     params = Parameters()
     results = q.projection(
@@ -62,11 +60,26 @@ def all_originalfiles(conn):
     return [x[0].val for x in results]
 
 
-def sessions_per_day(conn, date):
-    """Return a list of tuples with users who started sessions on a 
-        certain date and the number of sessions per user
+def all_originalfile_sizes(conn):
+    """Return the total size of all OriginalFiles."""
+    q = conn.getQueryService()
+    params = Parameters()
+    results = q.projection(
+        "SELECT sum(f.size)"
+        " FROM OriginalFile f",
+        params,
+        conn.SERVICE_OPTS
+        )
+    return results[0].val
 
-        Note: date should be a string formatted YYYY-MM-DD
+
+def sessions_per_day(conn, date):
+    """Return sessions and users per day.
+
+    Return a list of tuples with users who started sessions on a
+    certain date and the number of sessions per user.
+
+    Note: date should be a string formatted YYYY-MM-DD
 
     """
     q = conn.getQueryService()
