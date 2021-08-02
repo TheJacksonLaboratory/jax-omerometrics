@@ -15,6 +15,7 @@ def collect_data(repeats, pwd, img_id):
                                number=repeats, globals=globals()) / repeats
     web_timing = round(web_timing, 3)
     json_status = server_up.check_web_api('ratame', pwd, img_id)
+    print(json_status)
     json_timing = timeit.timeit(
                     "server_up.check_web_api('ratame', pwd, img_id)",
                     number=repeats, globals=globals()
@@ -80,6 +81,7 @@ if __name__ == "__main__":
                         help='Image ID to use for testing')
     args = parser.parse_args()
     repeats = 5
+    print(args.img_id)
     pwd = keyring.get_password('omero', args.user)
     status, timing = collect_data(repeats, pwd, args.img_id)
     write_csvs(status, timing, args.folder)
