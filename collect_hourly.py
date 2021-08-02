@@ -11,23 +11,23 @@ from pathlib import Path
 def collect_data(repeats, pwd, img_id):
     """Collect the actual data using different API calls."""
     web_status = server_up.check_web_response()
-    web_timing = timeit.timeit("server_up.check_web_response()",
-                               number=repeats, globals=globals()) / repeats
+    web_timing = timeit.timeit(lambda: server_up.check_web_response(),
+                               number=repeats, globals=globals(),
+                               ) / repeats
     web_timing = round(web_timing, 3)
     json_status = server_up.check_web_api('ratame', pwd, img_id)
-    print(img_id)
     json_timing = timeit.timeit(
-                    "server_up.check_web_api('ratame', pwd, img_id)",
+                    lambda: server_up.check_web_api('ratame', pwd, img_id),
                     number=repeats, globals=globals()
                     ) / repeats
     json_timing = round(json_timing, 3)
     ldap_status = server_up.check_ldap_login('ratame', pwd)
-    ldap_timing = timeit.timeit("server_up.check_ldap_login('ratame', pwd)",
+    ldap_timing = timeit.timeit(lambda: server_up.check_ldap_login('ratame', pwd),
                                 number=repeats, globals=globals()) / repeats
     ldap_timing = round(ldap_timing, 3)
     blitz_status = server_up.check_img_return(img_id, 'ratame', pwd)
     blitz_timing = timeit.timeit(
-                "server_up.check_img_return(img_id, 'ratame', pwd)",
+                lambda: server_up.check_img_return(img_id, 'ratame', pwd),
                 number=repeats, globals=globals()
                 ) / repeats
     blitz_timing = round(blitz_timing, 3)
