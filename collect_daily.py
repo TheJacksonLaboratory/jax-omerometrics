@@ -1,3 +1,4 @@
+"""Collect data that is relevant to be sampled once a day."""
 from jax_omerometrics import queries
 import keyring
 import ezomero
@@ -6,10 +7,13 @@ import datetime
 from pandas import DataFrame
 from pathlib import Path
 
+
 def collect_data(user, pwd):
-    conn = ezomero.connect(user, pwd, group='', host='bhomero01lp.jax.org', port=4064, secure=True)
-    yesterday = datetime.datetime.now() - datetime.timedelta(1)   
-    timestamp = yesterday.strftime("%Y-%m-%d") 
+    """Collect the actual data using HQL queries."""
+    conn = ezomero.connect(user, pwd, group='',
+                           host='bhomero01lp.jax.org', port=4064, secure=True)
+    yesterday = datetime.datetime.now() - datetime.timedelta(1)
+    timestamp = yesterday.strftime("%Y-%m-%d")
     allsessions = queries.sessions_per_day(conn, timestamp)
     conn.close()
     total_users = len(allsessions)
@@ -19,14 +23,14 @@ def collect_data(user, pwd):
     sessions = DataFrame([sessions_list], columns=sessions_headers)
     return sessions
 
+
 def write_csvs(sessions, folder):
+    """Write the collected data into a CSV file for display."""
     if (Path(folder) / 'sessions.csv').exists():
-        sessions.to_csv(Path(folder) / 'sessions.csv', mode='a', index=False, header=False)
+        sessions.to_csv(Path(folder) / 'sessions.csv',
+                        mode='a', index=False, header=False)
     else:
         sessions.to_csv(Path(folder) / 'sessions.csv', mode='a', index=False)
-    
-
-
 
 
 if __name__ == "__main__":
@@ -43,4 +47,3 @@ if __name__ == "__main__":
     pwd = keyring.get_password('omero', args.user)
     sessions = collect_data(args.user, pwd)
     write_csvs(sessions, args.folder)
-    
