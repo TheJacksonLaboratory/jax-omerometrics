@@ -15,7 +15,7 @@ def collect_data(repeats, pwd, img_id):
                                number=repeats, globals=globals()) / repeats
     web_timing = round(web_timing, 3)
     json_status = server_up.check_web_api('ratame', pwd, img_id)
-    print(json_status)
+    print(img_id)
     json_timing = timeit.timeit(
                     "server_up.check_web_api('ratame', pwd, img_id)",
                     number=repeats, globals=globals()
