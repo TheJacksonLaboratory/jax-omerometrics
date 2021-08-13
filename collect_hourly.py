@@ -10,6 +10,7 @@ from pathlib import Path
 
 def collect_data(repeats, pwd, img_id):
     """Collect the actual data using different API calls."""
+
     web_status = server_up.check_web_response()
     web_timing = timeit.timeit(lambda: server_up.check_web_response(),
                                number=repeats, globals=globals(),
@@ -37,9 +38,11 @@ def collect_data(repeats, pwd, img_id):
                    json_status, ldap_status, blitz_status]
     timing_list = [timestamp, web_timing,
                    json_timing, ldap_timing, blitz_timing]
-    if all(status_list):
+    color_status = [web_status,
+                   json_status, ldap_status, blitz_status]
+    if all(color_status):
         status_list.append("green")
-    elif any(status_list):
+    elif any(color_status):
         status_list.append("orange")
     else:
         status_list.append("red")
