@@ -97,7 +97,7 @@ def check_ldap_login(user, pwd, address='bhomero01lp.jax.org',
     """Check whether an LDAP user can log into OMERO.server."""
 
     # set up signal for a 30s timeout on connection
-    signal.signal(signal.s, handler)
+    signal.signal(signal.SIGALRM, handler)
     signal.alarm(30)
     ret = False
     try:
