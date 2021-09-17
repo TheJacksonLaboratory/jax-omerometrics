@@ -20,7 +20,7 @@ def create_json_session(web_host, username, password, verify=True):
     session = requests.Session()
     # Start by getting supported versions from the base url...
     api_url = '%s/api/' % web_host
-    r = session.get(api_url, verify=verify,timeout=5)
+    r = session.get(api_url, verify=verify, timeout=5)
     assert r.status_code == 200
     print(api_url, r)
     # we get a list of versions
@@ -68,7 +68,7 @@ def create_json_session(web_host, username, password, verify=True):
     return login_rsp, session, base_url
 
 
-def check_web_response(address='https://images.jax.org'):
+def check_web_response(address):
     """Check whether a web server is returning code 200."""
     try:
         r = requests.get(address, timeout=5)
@@ -77,13 +77,12 @@ def check_web_response(address='https://images.jax.org'):
     return r.status_code == requests.codes.ok
 
 
-def check_web_api(user, pwd, img_id, address='https://images.jax.org'):
+def check_web_api(user, pwd, img_id, address):
     """Check whether the JSON API can return a JPEG from an image."""
     try:
         _, session, base_url = create_json_session(address, user, pwd)
     except:
-        ret = False
-        return ret
+        return False
     host = base_url.split("/api")[0]
     img_address = host+"/webgateway/render_birds_eye_view/"+str(img_id)+"/"
     jpeg = session.get(img_address, stream=True)
@@ -92,7 +91,7 @@ def check_web_api(user, pwd, img_id, address='https://images.jax.org'):
     return ret
 
 
-def check_ldap_login(user, pwd, address='bhomero01lp.jax.org',
+def check_ldap_login(user, pwd, address,
                      port=4064, secure=True, group=''):
     """Check whether an LDAP user can log into OMERO.server."""
 
@@ -110,7 +109,7 @@ def check_ldap_login(user, pwd, address='bhomero01lp.jax.org',
     return ret
 
 
-def check_img_return(img_id, user, pwd, address='bhomero01lp.jax.org',
+def check_img_return(img_id, user, pwd, address,
                      port=4064, secure=True, group=''):
     """Check whether an OMERO server is returning an image when asked."""
     # set up signal for a 120s timeout on getting image

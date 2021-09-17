@@ -8,27 +8,43 @@ from pandas import DataFrame
 from pathlib import Path
 
 
-def collect_data(repeats, pwd, img_id):
+def collect_data(repeats, pwd, img_id, web_address, address):
     """Collect the actual data using different API calls."""
 
-    web_status = server_up.check_web_response()
-    web_timing = timeit.timeit(lambda: server_up.check_web_response(),
-                               number=repeats, globals=globals(),
-                               ) / repeats
+    web_status = server_up.check_web_response(web_address)
+    if (not web_status):
+        web_timing = 3
+    else:
+        web_timing = timeit.timeit(
+                     lambda: server_up.check_web_response(web_address),
+                     number=repeats, globals=globals(),
+                                  ) / repeats
     web_timing = round(web_timing, 3)
-    json_status = server_up.check_web_api('ratame', pwd, img_id)
-    json_timing = timeit.timeit(
-                    lambda: server_up.check_web_api('ratame', pwd, img_id),
-                    number=repeats, globals=globals()
-                    ) / repeats
+    json_status = server_up.check_web_api('ratame', pwd, img_id, web_address)
+    if (not json_status):
+        json_timing = 3
+    else:
+        json_timing = timeit.timeit(lambda: server_up.check_web_api(
+                                    'ratame', pwd, img_id, web_address),
+                                    number=repeats, globals=globals()
+                                    ) / repeats
     json_timing = round(json_timing, 3)
-    ldap_status = server_up.check_ldap_login('ratame', pwd)
-    ldap_timing = timeit.timeit(lambda: server_up.check_ldap_login('ratame', pwd),
-                                number=repeats, globals=globals()) / repeats
+    ldap_status = server_up.check_ldap_login('ratame', pwd, address)
+    if (not ldap_status):
+        ldap_timing = 3
+    else:
+        ldap_timing = timeit.timeit(lambda: server_up.check_ldap_login(
+                                    'ratame', pwd, address),
+                                    number=repeats, globals=globals()
+                                    ) / repeats
     ldap_timing = round(ldap_timing, 3)
-    blitz_status = server_up.check_img_return(img_id, 'ratame', pwd)
-    blitz_timing = timeit.timeit(
-                lambda: server_up.check_img_return(img_id, 'ratame', pwd),
+    blitz_status = server_up.check_img_return(img_id, 'ratame', pwd, address)
+    if (not blitz_status):
+        blitz_timing = 3
+    else:
+        blitz_timing = timeit.timeit(
+                lambda: server_up.check_img_return(
+                        img_id, 'ratame', pwd, address),
                 number=repeats, globals=globals()
                 ) / repeats
     blitz_timing = round(blitz_timing, 3)
@@ -39,7 +55,7 @@ def collect_data(repeats, pwd, img_id):
     timing_list = [timestamp, web_timing,
                    json_timing, ldap_timing, blitz_timing]
     color_status = [web_status,
-                   json_status, ldap_status, blitz_status]
+                    json_status, ldap_status, blitz_status]
     if all(color_status):
         status_list.append("green")
     elif any(color_status):
@@ -82,9 +98,18 @@ if __name__ == "__main__":
                         type=int,
                         default=87066,
                         help='Image ID to use for testing')
+    parser.add_argument('--web_addr',
+                        type=str,
+                        default="https://omeroweb.jax.org",
+                        help='Address for OMERO web instance')
+    parser.add_argument('--addr',
+                        type=str,
+                        default="ctomero01lp.jax.org",
+                        help='Address for OMERO server instance')
     args = parser.parse_args()
     repeats = 5
     print(args.img_id)
     pwd = keyring.get_password('omero', args.user)
-    status, timing = collect_data(repeats, pwd, args.img_id)
+    status, timing = collect_data(repeats, pwd, args.img_id,
+                                  args.web_addr, args.addr)
     write_csvs(status, timing, args.folder)

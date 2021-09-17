@@ -8,10 +8,10 @@ from pandas import DataFrame
 from pathlib import Path
 
 
-def collect_data(user, pwd):
+def collect_data(user, pwd, address):
     """Collect the actual data using HQL queries."""
     conn = ezomero.connect(user, pwd, group='',
-                           host='bhomero01lp.jax.org', port=4064, secure=True)
+                           host=address, port=4064, secure=True)
     yesterday = datetime.datetime.now() - datetime.timedelta(1)
     timestamp = yesterday.strftime("%Y-%m-%d")
     allsessions = queries.sessions_per_day(conn, timestamp)
@@ -43,7 +43,11 @@ if __name__ == "__main__":
     parser.add_argument('user',
                         type=str,
                         help='OMERO username')
+    parser.add_argument('--addr',
+                        type=str,
+                        default="ctomero01lp.jax.org",
+                        help='Address for OMERO server instance')
     args = parser.parse_args()
     pwd = keyring.get_password('omero', args.user)
-    sessions = collect_data(args.user, pwd)
+    sessions = collect_data(args.user, pwd, args.addr)
     write_csvs(sessions, args.folder)
