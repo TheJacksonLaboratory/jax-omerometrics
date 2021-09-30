@@ -13,7 +13,7 @@ def collect_data(repeats, pwd, img_id, web_address, address):
 
     web_status = server_up.check_web_response(web_address)
     if (not web_status):
-        web_timing = 3
+        web_timing = 8
     else:
         web_timing = timeit.timeit(
                      lambda: server_up.check_web_response(web_address),
@@ -22,7 +22,7 @@ def collect_data(repeats, pwd, img_id, web_address, address):
     web_timing = round(web_timing, 3)
     json_status = server_up.check_web_api('ratame', pwd, img_id, web_address)
     if (not json_status):
-        json_timing = 3
+        json_timing = 8
     else:
         json_timing = timeit.timeit(lambda: server_up.check_web_api(
                                     'ratame', pwd, img_id, web_address),
@@ -31,7 +31,7 @@ def collect_data(repeats, pwd, img_id, web_address, address):
     json_timing = round(json_timing, 3)
     ldap_status = server_up.check_ldap_login('ratame', pwd, address)
     if (not ldap_status):
-        ldap_timing = 3
+        ldap_timing = 8
     else:
         ldap_timing = timeit.timeit(lambda: server_up.check_ldap_login(
                                     'ratame', pwd, address),
@@ -40,7 +40,7 @@ def collect_data(repeats, pwd, img_id, web_address, address):
     ldap_timing = round(ldap_timing, 3)
     blitz_status = server_up.check_img_return(img_id, 'ratame', pwd, address)
     if (not blitz_status):
-        blitz_timing = 3
+        blitz_timing = 8
     else:
         blitz_timing = timeit.timeit(
                 lambda: server_up.check_img_return(
