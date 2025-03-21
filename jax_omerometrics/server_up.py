@@ -79,14 +79,17 @@ def check_web_response(address):
 
 def check_web_api(user, pwd, img_id, address):
     """Check whether the JSON API can return a JPEG from an image."""
+    print("checking json api...")
     try:
         _, session, base_url = create_json_session(address, user, pwd)
     except:
         return False
+    print("initial success")
     host = base_url.split("/api")[0]
     img_address = host+"/webgateway/render_birds_eye_view/"+str(img_id)+"/"
     jpeg = session.get(img_address, stream=True)
     ret = (jpeg.status_code == requests.codes.ok)
+    print(f"return code is {ret}")
     session.close()
     return ret
 
