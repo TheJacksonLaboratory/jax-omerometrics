@@ -20,8 +20,9 @@ def collect_data(repeats, pwd, img_id, web_address, address):
                      number=repeats, globals=globals(),
                                   ) / repeats
     web_timing = round(web_timing, 3)
+    print("starting check json status")
     json_status = server_up.check_web_api('ratame', pwd, img_id, web_address)
-    print(f"json status: {json_status}")
+    print(f"initial json status: {json_status}")
     if (not json_status):
         json_timing = 8
     else:

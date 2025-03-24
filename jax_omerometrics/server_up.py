@@ -80,9 +80,12 @@ def check_web_response(address):
 def check_web_api(user, pwd, img_id, address):
     """Check whether the JSON API can return a JPEG from an image."""
     print("checking json api...")
+    print(address, user)
     try:
         _, session, base_url = create_json_session(address, user, pwd)
+        print("created session successfully")
     except:
+        print("failed to create session")
         return False
     print("initial success")
     host = base_url.split("/api")[0]
