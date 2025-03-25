@@ -84,7 +84,8 @@ def check_web_api(user, pwd, img_id, address):
     try:
         _, session, base_url = create_json_session(address, user, pwd)
         print("created session successfully")
-    except:
+    except Exception as e:
+        print(f"{type(e).__name__} at line {e.__traceback__.tb_lineno} of {__file__}: {e}")
         print("failed to create session")
         return False
     print("initial success")
