@@ -130,3 +130,6 @@ dmypy.json
 
 # misc
 .vscode
+
+# secrets
+config.py

@@ -1,11 +1,11 @@
 """Collect data that is relevant to be sampled once a day."""
 from jax_omerometrics import queries
-import keyring
 import ezomero
 import argparse
 import datetime
 from pandas import DataFrame
 from pathlib import Path
+from config import OMERO_USER, OMERO_PASS, SMTP_HOST, SMTP_PORT, ALERTEES
 
 
 def collect_data(user, pwd, address):
@@ -40,14 +40,10 @@ if __name__ == "__main__":
                         type=str,
                         help='Full path to folder where\
                               data will be saved')
-    parser.add_argument('user',
-                        type=str,
-                        help='OMERO username')
     parser.add_argument('--addr',
                         type=str,
                         default="ctomero01lp.jax.org",
                         help='Address for OMERO server instance')
     args = parser.parse_args()
-    pwd = keyring.get_password('omero', args.user)
-    sessions = collect_data(args.user, pwd, args.addr)
+    sessions = collect_data(OMERO_USER, OMERO_PASS, args.addr)
     write_csvs(sessions, args.folder)
