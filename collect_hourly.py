@@ -106,7 +106,7 @@ def send_alerts(timing):
             send_email("Blitz API unresponsive")
         else:
             send_email(f"Blitz API slow response time at {blitz_timing} seconds.")
-    if timing["json_api"][0] > 4:
+    if timing["json_api"][0] > 5:
         print("Sending emails for JSON API alert")
         json_timing = timing["json_api"][0]
         if json_timing == 8:
