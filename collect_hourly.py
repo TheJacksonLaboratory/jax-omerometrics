@@ -134,9 +134,9 @@ if __name__ == "__main__":
                         default="ctomero01lp.jax.org",
                         help='Address for OMERO server instance')
     args = parser.parse_args()
-    repeats = 5
+    repeats = 1
     print(args.img_id)
     status, timing = collect_data(repeats, OMERO_USER, OMERO_PASS, args.img_id,
                                   args.web_addr, args.addr)
     write_csvs(status, timing, args.folder)
-    send_alerts(timing)
+    #send_alerts(timing)
