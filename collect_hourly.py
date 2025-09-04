@@ -98,21 +98,21 @@ def send_email(content):
         s.send_message(msg)
     s.quit()
 
-def send_alerts(timing):
-    if timing["blitz_api"][0] > 4:
-        print("Sending emails for Blitz API alert")
+def send_alerts(status, timing):
+    if not status["blitz_api"][0]:
+        print("Sending emails for Blitz API alert unresponsive")
+        send_email("Blitz api unresponsive")
+    elif timing["blitz_api"][0] > 4:
+        print("Sending emails for Blitz API alert slow")
         blitz_timing = timing["blitz_api"][0]
-        if blitz_timing == 8:
-            send_email("Blitz API unresponsive")
-        else:
-            send_email(f"Blitz API slow response time at {blitz_timing} seconds.")
-    if timing["json_api"][0] > 5:
-        print("Sending emails for JSON API alert")
+        send_email(f"Blitz API slow response time at {blitz_timing} seconds.")
+    if not status["json_api"][0]:
+        print("Sending emails for JSON API alert unresponsive")
+        send_email("JSON api unresponsive")
+    elif timing["json_api"][0] > 6:
+        print("Sending emails for JSON API alert slow")
         json_timing = timing["json_api"][0]
-        if json_timing == 8:
-            send_email("JSON API unresponsive")
-        else:
-            send_email(f"JSON API slow response time at {json_timing} seconds.")
+        send_email(f"JSON API slow response time at {json_timing} seconds.")
 
 if __name__ == "__main__":
     description = 'Run this to collect data hourly.'
@@ -139,4 +139,4 @@ if __name__ == "__main__":
     status, timing = collect_data(repeats, OMERO_USER, OMERO_PASS, args.img_id,
                                   args.web_addr, args.addr)
     write_csvs(status, timing, args.folder)
-    send_alerts(timing)
+    send_alerts(status, timing)
