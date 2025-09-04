@@ -22,17 +22,17 @@ def collect_data(repeats, user, pwd, img_id, web_address, address):
                      number=repeats, globals=globals(),
                                   ) / repeats
     web_timing = round(web_timing, 3)
-    print("starting check json status")
-    json_status = server_up.check_web_api(user, pwd, img_id, web_address)
-    print(f"initial json status: {json_status}")
-    if (not json_status):
-        json_timing = 8
-    else:
-        json_timing = timeit.timeit(lambda: server_up.check_web_api(
-                                    user, pwd, img_id, web_address),
-                                    number=repeats, globals=globals()
-                                    ) / repeats
-    json_timing = round(json_timing, 3)
+    # print("starting check json status")
+    # json_status = server_up.check_web_api(user, pwd, img_id, web_address, verify=False)
+    # print(f"initial json status: {json_status}")
+    # if (not json_status):
+    #     json_timing = 8
+    # else:
+    #     json_timing = timeit.timeit(lambda: server_up.check_web_api(
+    #                                 user, pwd, img_id, web_address),
+    #                                 number=repeats, globals=globals()
+    #                                 ) / repeats
+    # json_timing = round(json_timing, 3)
     ldap_status = server_up.check_ldap_login(user, pwd, address)
     if (not ldap_status):
         ldap_timing = 8
@@ -55,20 +55,24 @@ def collect_data(repeats, user, pwd, img_id, web_address, address):
     now = datetime.datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M")
     status_list = [timestamp, web_status,
-                   json_status, ldap_status, blitz_status]
+                   # json_status, 
+                   ldap_status, blitz_status]
     timing_list = [timestamp, web_timing,
-                   json_timing, ldap_timing, blitz_timing]
+                   # json_timing, 
+                   ldap_timing, blitz_timing]
     color_status = [web_status,
-                    json_status, ldap_status, blitz_status]
+                    # json_status,
+                    ldap_status, blitz_status]
     if all(color_status):
         status_list.append("green")
     elif any(color_status):
         status_list.append("orange")
     else:
         status_list.append("red")
-    status_headers = ['timestamp', 'webpage', 'json_api',
+    status_headers = ['timestamp', 'webpage',# 'json_api',
                       'ldap', 'blitz_api', 'color']
-    timing_headers = ['timestamp', 'webpage', 'json_api', 'ldap', 'blitz_api']
+    timing_headers = ['timestamp', 'webpage',# 'json_api',
+                     'ldap', 'blitz_api']
     status = DataFrame([status_list], columns=status_headers)
     timing = DataFrame([timing_list], columns=timing_headers)
     return status, timing
@@ -92,27 +96,27 @@ def send_email(content):
     for alertee in ALERTEES:
         msg = EmailMessage()
         msg.set_content(content) # "OMERO Blitz connection time exceeded alert limit"
-        msg['Subject'] = "Alert from omerodashboard.jax.org"
+        msg['Subject'] = "TEST Alert from omerodashboard.jax.org TEST"
         msg['From'] = ALERTEES[0]
         msg['To'] = alertee
         s.send_message(msg)
     s.quit()
 
-def send_alerts(timing):
-    if timing["blitz_api"][0] > 4:
-        print("Sending emails for Blitz API alert")
+def send_alerts(status, timing):
+    if not status["blitz_api"][0]:
+        print("Sending emails for Blitz API alert unresponsive")
+        send_email("THIS IS A TEST. Blitz api unresponsive")
+    elif timing["blitz_api"][0] > 4:
+        print("Sending emails for Blitz API alert slow")
         blitz_timing = timing["blitz_api"][0]
-        if blitz_timing == 8:
-            send_email("Blitz API unresponsive")
-        else:
-            send_email(f"Blitz API slow response time at {blitz_timing} seconds.")
-    if timing["json_api"][0] > 4:
-        print("Sending emails for JSON API alert")
-        json_timing = timing["json_api"][0]
-        if json_timing == 8:
-            send_email("JSON API unresponsive")
-        else:
-            send_email(f"JSON API slow response time at {json_timing} seconds.")
+        send_email(f"THIS IS A TEST. Blitz API slow response time at {blitz_timing} seconds.")
+    # if timing["json_api"][0] > 5:
+    #     print("Sending emails for JSON API alert")
+    #     json_timing = timing["json_api"][0]
+    #     if json_timing == 8:
+    #         send_email("THIS IS A TEST. JSON API unresponsive")
+    #     else:
+    #         send_email(f"THIS IS A TEST. JSON API slow response time at {json_timing} seconds.")
 
 if __name__ == "__main__":
     description = 'Run this to collect data hourly.'
@@ -139,4 +143,4 @@ if __name__ == "__main__":
     status, timing = collect_data(repeats, OMERO_USER, OMERO_PASS, args.img_id,
                                   args.web_addr, args.addr)
     write_csvs(status, timing, args.folder)
-    #send_alerts(timing)
+    send_alerts(status, timing)
