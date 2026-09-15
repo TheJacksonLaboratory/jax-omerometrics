@@ -9,12 +9,11 @@ import paramiko
 LOG_DIR = "/opt/omero/server/OMERO.server/var/log"
 
 
-def _run_remote_command(user, passfile, address, command):
+def _run_remote_command(ssh_user, ssh_pwd, address, command):
     """Run a command on an OMERO server host over SSH and return its stdout."""
-    password = Path(passfile).read_text().strip()
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(address, username=user, password=password)
+    client.connect(address, username=ssh_user, password=ssh_pwd)
     try:
         _, stdout, _ = client.exec_command(command)
         output = stdout.read().decode()
@@ -23,7 +22,7 @@ def _run_remote_command(user, passfile, address, command):
     return output
 
 
-def check_last_hour(user, passfile, logfilename, address,
+def check_last_hour(logfilename, ssh_user, ssh_pwd, ctrl_pln,
                     pod="omero-server", namespace="omero-dev"):
     """Return lines logged with ERROR in the last hour of an OMERO log file."""
     # get current time
@@ -32,12 +31,12 @@ def check_last_hour(user, passfile, logfilename, address,
     last_hour = (now - datetime.timedelta(hours=1)).strftime("%Y-%m-%d %H")
     # log file path is /opt/omero/server/OMERO.server/var/log + logfilename
     logpath = f"{LOG_DIR}/{logfilename}"
-    # ssh to servername.jax.org using password in passfile, running kubectl exec grep for last hour in logfile inside kubernetes pod omero-server
+    # ssh to servername.jax.org using password from config.py, running kubectl exec grep for last hour in logfile inside kubernetes pod omero-server
     command = (
         f"kubectl exec {pod} -n {namespace} -- "
         f"grep '{last_hour}' {logpath}"
     )
-    output = _run_remote_command(user, passfile, address, command)
+    output = _run_remote_command(ssh_user, ssh_pwd, ctrl_pln, command)
     # grep for lines with ERROR
     # known-noisy ERROR lines to drop; add more regex patterns here as needed
     ignored_patterns = [
@@ -53,14 +52,14 @@ def check_last_hour(user, passfile, logfilename, address,
     return error_lines
 
 
-def check_master_err(user, passfile, prevfile, address,
+def check_master_err(prevfile, ssh_user, ssh_pwd, ctrl_pln,
                      pod="omero-server", namespace="omero-dev"):
     """Compare the current master.err against the last saved copy."""
     # master err path is /opt/omero/server/OMERO.server/var/log/master.err
     master_err_path = f"{LOG_DIR}/master.err"
-    # ssh to servername.jax.org using password in passfile, running kubectl exec to get the contents of master.err inside kubernetes pod omero-server
+    # ssh to servername.jax.org using password from config.py, running kubectl exec to get the contents of master.err inside kubernetes pod omero-server
     command = f"kubectl exec {pod} -n {namespace} -- cat {master_err_path}"
-    current = _run_remote_command(user, passfile, address, command)
+    current = _run_remote_command(ssh_user, ssh_pwd, ctrl_pln, command)
     # load local saved file of previous master.err
     prev_path = Path(prevfile)
     previous = prev_path.read_text() if prev_path.exists() else None

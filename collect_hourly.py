@@ -1,5 +1,5 @@
 """Collect data that is relevant to be sampled once an hour."""
-from jax_omerometrics import server_up
+from jax_omerometrics import server_up, logs
 import timeit
 import argparse
 import datetime
@@ -7,7 +7,7 @@ from pandas import DataFrame
 from pathlib import Path
 import smtplib
 from email.message import EmailMessage
-from config import OMERO_USER, OMERO_PASS, SMTP_HOST, SMTP_PORT, ALERTEES
+from config import OMERO_USER, OMERO_PASS, SSH_USER, SSH_PASS, CTRL_PLN, SMTP_HOST, SMTP_PORT, ALERTEES
 
 
 def collect_data(repeats, user, pwd, img_id, web_address, address):
@@ -91,7 +91,7 @@ def send_email(content):
     s = smtplib.SMTP(host=SMTP_HOST, port=SMTP_PORT)
     for alertee in ALERTEES:
         msg = EmailMessage()
-        msg.set_content(content) # "OMERO Blitz connection time exceeded alert limit"
+        msg.set_content(content)
         msg['Subject'] = "Alert from omerodashboard.jax.org"
         msg['From'] = ALERTEES[0]
         msg['To'] = alertee
@@ -114,6 +114,24 @@ def send_alerts(status, timing):
         json_timing = timing["json_api"][0]
         send_email(f"JSON API slow response time at {json_timing} seconds.")
 
+def log_alerts(prevfile, ssh_user, ssh_pass, ctrl_pln):
+    """
+    Check logs at /opt/omero/server/OMERO.server/var/log
+    and send email alerts if concerning errors
+    """
+    master_err_diff = logs.check_master_err(prevfile, ssh_user, ssh_pass, ctrl_pln)
+    if master_err_diff:
+        send_email(f"master.err has changed:\n\n{master_err_diff}")
+    email_content = ""
+    logfiles = ["Blitz-0.log", "Blitz-0.log.1", "Processor-0.log", "Indexer-0.log", "PixelData-0.log", "Tables-0.log"]
+    for logfile in logfiles:
+        log_errors = logs.check_last_hour(logfile, ssh_user, ssh_pass, ctrl_pln)
+        if log_errors:
+            log_message = "\n".join(log_errors)
+            email_content += f"\n\nLog file {logfile} shows errors from last hour:\n\n{log_message}"
+    if email_content:
+        send_email(email_content)
+
 if __name__ == "__main__":
     description = 'Run this to collect data hourly.'
     parser = argparse.ArgumentParser(description=description)
@@ -133,6 +151,12 @@ if __name__ == "__main__":
                         type=str,
                         default="ctomero01lp.jax.org",
                         help='Address for OMERO server instance')
+    parser.add_argument('--prev_err',
+                        type=str,
+                        default="/data/master.err",
+                        help='Local path to save previous\
+                              master.err to compare and alert\
+                              on differences')
     args = parser.parse_args()
     repeats = 5
     print(args.img_id)
@@ -140,3 +164,4 @@ if __name__ == "__main__":
                                   args.web_addr, args.addr)
     write_csvs(status, timing, args.folder)
     send_alerts(status, timing)
+    log_alerts(args.prev_err, SSH_USER, SSH_PASS, CTRL_PLN)
