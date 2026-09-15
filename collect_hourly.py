@@ -121,7 +121,8 @@ def log_alerts(prevfile, ssh_user, ssh_pass, ctrl_pln):
     """
     master_err_diff = logs.check_master_err(prevfile, ssh_user, ssh_pass, ctrl_pln)
     if master_err_diff:
-        send_email(f"master.err has changed:\n\n{master_err_diff}")
+        err_diff_string = "\n".join(master_err_diff)
+        send_email(f"master.err has changed:\n\n{err_diff_string}")
     email_content = ""
     logfiles = ["Blitz-0.log", "Blitz-0.log.1", "Processor-0.log", "Indexer-0.log", "PixelData-0.log", "Tables-0.log"]
     for logfile in logfiles:

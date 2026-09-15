@@ -28,7 +28,7 @@ def check_last_hour(logfilename, ssh_user, ssh_pwd, ctrl_pln,
     # get current time
     now = datetime.datetime.now()
     # set string variable to last hour in "2026-09-14 19:51:00" format
-    last_hour = (now - datetime.timedelta(hours=1)).strftime("%Y-%m-%d %H")
+    last_hour = (now + datetime.timedelta(hours=3)).strftime("%Y-%m-%d %H") # would be -1 hour except time in pod is ahead by 4
     # log file path is /opt/omero/server/OMERO.server/var/log + logfilename
     logpath = f"{LOG_DIR}/{logfilename}"
     # ssh to servername.jax.org using password from config.py, running kubectl exec grep for last hour in logfile inside kubernetes pod omero-server
