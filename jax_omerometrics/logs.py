@@ -62,12 +62,15 @@ def check_master_err(prevfile, ssh_user, ssh_pwd, ctrl_pln,
     current = _run_remote_command(ssh_user, ssh_pwd, ctrl_pln, command)
     # load local saved file of previous master.err
     prev_path = Path(prevfile)
-    previous = prev_path.read_text() if prev_path.exists() else None
+    if prev_path.exists():
+        previous = prev_path.read_text()
+    else:
+        previous = ""
     # compare current and previous master.err
     if current != previous:
         # if different: return difference and save new as prev locally
         diff = list(difflib.unified_diff(
-            (previous or "").splitlines(),
+            previous.splitlines(),
             current.splitlines(),
             lineterm="",
         ))
