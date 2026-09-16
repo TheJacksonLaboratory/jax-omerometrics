@@ -123,10 +123,10 @@ def log_alerts(prevfile, ssh_user, ssh_pass, ctrl_pln):
     if master_err_diff:
         err_diff_string = "\n".join(master_err_diff)
         send_email(f"master.err has changed:\n\n{err_diff_string}")
-    email_content = ""
     logfiles = ["Blitz-0.log", "Blitz-0.log.1", "Processor-0.log", "Indexer-0.log", "PixelData-0.log", "Tables-0.log"]
-    for logfile in logfiles:
-        log_errors = logs.check_last_hour(logfile, ssh_user, ssh_pass, ctrl_pln, namespace="omero-prod")
+    errors_by_file = logs.check_last_hour(logfiles, ssh_user, ssh_pass, ctrl_pln, namespace="omero-prod")
+    email_content = ""
+    for logfile, log_errors in errors_by_file.items():
         if log_errors:
             log_message = "\n".join(log_errors)
             email_content += f"\n\nLog file {logfile} shows errors from last hour:\n\n{log_message}"

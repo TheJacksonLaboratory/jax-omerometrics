@@ -7,6 +7,10 @@ import paramiko
 
 
 LOG_DIR = "/opt/omero/server/OMERO.server/var/log"
+IGNORED_ERRORS = [
+        re.compile(r"IFD"),
+        re.compile(r"invocation")
+    ]
 
 
 def _run_remote_command(ssh_user, ssh_pwd, address, command):
@@ -22,34 +26,33 @@ def _run_remote_command(ssh_user, ssh_pwd, address, command):
     return output
 
 
-def check_last_hour(logfilename, ssh_user, ssh_pwd, ctrl_pln,
+def check_last_hour(logfilenames, ssh_user, ssh_pwd, ctrl_pln,
                     pod="omero-server", namespace="omero-dev"):
-    """Return lines logged with ERROR in the last hour of an OMERO log file."""
+    """Return {logfilename: [ERROR lines]} for the last hour, across
+    all of logfilenames, using a single SSH session."""
     # get current time
-    now = datetime.datetime.now()
+    now = datetime.datetime.now(datetime.timezone.utc) # pods use UTC time
     # set string variable to last hour in "2026-09-14 19:51:00" format
-    last_hour = (now + datetime.timedelta(hours=3)).strftime("%Y-%m-%d %H") # would be -1 hour except time in pod is ahead by 4
+    last_hour = (now - datetime.timedelta(hours=1)).strftime("%Y-%m-%d %H")
     # log file path is /opt/omero/server/OMERO.server/var/log + logfilename
-    logpath = f"{LOG_DIR}/{logfilename}"
-    # ssh to servername.jax.org using password from config.py, running kubectl exec grep for last hour in logfile inside kubernetes pod omero-server
+    logpaths = {f"{LOG_DIR}/{name}": name for name in logfilenames}
+    # ssh to servername.jax.org using password from config.py, running kubectl exec grep for last hour in each logfile inside kubernetes pod omero-server, in one session
     command = (
         f"kubectl exec {pod} -n {namespace} -- "
-        f"grep '{last_hour}' {logpath}"
+        f"grep -H '{last_hour}' " + " ".join(logpaths)
     )
     output = _run_remote_command(ssh_user, ssh_pwd, ctrl_pln, command)
-    # grep for lines with ERROR
-    # known-noisy ERROR lines to drop; add more regex patterns here as needed
-    ignored_patterns = [
-        re.compile(r"IFD"),
-        re.compile(r"invocation"),
-    ]
-    error_lines = [
-        line for line in output.splitlines()
-        if "ERROR" in line
-        and not any(p.search(line) for p in ignored_patterns)
-    ]
-    # return error lines
-    return error_lines
+    # grep for lines with ERROR, ignoring common errors, grouped by logfile
+    results = {name: [] for name in logfilenames}
+    for line in output.splitlines():
+        path, _, content = line.partition(":")
+        name = logpaths.get(path)
+        if name is None:
+            continue
+        if "ERROR" in content and not any(p.search(content) for p in IGNORED_ERRORS):
+            results[name].append(content)
+    # return error lines by logfile
+    return results
 
 
 def check_master_err(prevfile, ssh_user, ssh_pwd, ctrl_pln,
@@ -74,12 +77,12 @@ def check_master_err(prevfile, ssh_user, ssh_pwd, ctrl_pln,
             current.splitlines(),
             lineterm="",
         ))
-        added_lines = [line for line in diff
-                      if line.startswith("+") and not line.startswith("+++")]
-        removed_lines = [line for line in diff
-                         if line.startswith("-") and not line.startswith("---")]
-        # not used yet, but flags a master.err that only shrank/rotated
-        only_removals = bool(removed_lines) and not added_lines
+        # TODO: (optional) use following commented lines to not alert if master.err has only decreased (e.g. for pod restart)
+        # added_lines = [line for line in diff
+        #               if line.startswith("+") and not line.startswith("+++")]
+        # removed_lines = [line for line in diff
+        #                  if line.startswith("-") and not line.startswith("---")]
+        # only_removals = bool(removed_lines) and not added_lines
         prev_path.write_text(current)
         return diff
     # otherwise return all clear
