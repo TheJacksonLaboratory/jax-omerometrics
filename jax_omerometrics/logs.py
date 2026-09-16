@@ -13,16 +13,20 @@ IGNORED_ERRORS = [
     ]
 
 
-def _run_remote_command(ssh_user, ssh_pwd, address, command):
+def _run_remote_command(ssh_user, ssh_pwd, address, command, ok_exit_codes=(0,)):
     """Run a command on an OMERO server host over SSH and return its stdout."""
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     client.connect(address, username=ssh_user, password=ssh_pwd)
     try:
-        _, stdout, _ = client.exec_command(command)
+        _, stdout, stderr = client.exec_command(command)
         output = stdout.read().decode()
+        error_output = stderr.read().decode()
+        exit_status = stdout.channel.recv_exit_status()
     finally:
         client.close()
+    if exit_status not in ok_exit_codes or error_output:
+        raise RuntimeError(f"Command failed on {address} (exit {exit_status}): {command}\n{error_output}")
     return output
 
 
@@ -41,7 +45,8 @@ def check_last_hour(logfilenames, ssh_user, ssh_pwd, ctrl_pln,
         f"kubectl exec {pod} -n {namespace} -- "
         f"grep -H '{last_hour}' " + " ".join(logpaths)
     )
-    output = _run_remote_command(ssh_user, ssh_pwd, ctrl_pln, command)
+    # grep exits 1 when nothing matches
+    output = _run_remote_command(ssh_user, ssh_pwd, ctrl_pln, command, ok_exit_codes=(0, 1))
     # grep for lines with ERROR, ignoring common errors, grouped by logfile
     results = {name: [] for name in logfilenames}
     for line in output.splitlines():
